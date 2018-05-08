@@ -70,7 +70,7 @@ class MyWindow(QtGui.QWidget):
 
         self.vbox = QtGui.QVBoxLayout()
         
-        self.btnQuit = QtGui.QPushButton("Close")      
+        self.btnQuit = QtGui.QPushButton("Record all data")      
         self.connect(self.btnQuit, QtCore.SIGNAL("clicked()"), self.rec_stat)
 
         self.label = QtGui.QLabel('')
@@ -486,9 +486,13 @@ class MyWindow(QtGui.QWidget):
 
         i = 0	
         stat.write('nu_pi phase ampl cos sin current delta'+'\n')
-        for i in np.arange(len(self.nu_meas)):	
-            stat.write('%f %f %f %f %f %f %f \n'%(self.nu_meas[i], self.phase[i], self.amplitude[i], self.cos[i], self.sin[i], self.c_list[i], self.d_list[i]))
-        stat.close()
+	if len(self.nu_meas) > 0:
+            for i in np.arange(len(self.nu_meas)):	
+                stat.write('%f %f %f %f %f %f %f \n'%(self.nu_meas[i], self.phase[i], self.amplitude[i], self.cos[i], self.sin[i], self.c_list[i], self.d_list[i]))
+        else:
+            print('nothing to save, sorry...')
+	
+	stat.close()
             
             
     def read_IE(self):
