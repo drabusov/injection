@@ -109,7 +109,7 @@ class MyWindow(QtGui.QWidget):
         self.timer.connect(self.timer, QtCore.SIGNAL('timeout()'), self.reconnect)
        
         
-        self.connect(self, QtCore.SIGNAL("external()"), self.print_data)
+        self.connect(self, QtCore.SIGNAL("external()"), self.beamhistory)
 
         self.connect(self, QtCore.SIGNAL("history_recorded()"), self.fft_naff)
 
@@ -239,7 +239,7 @@ class MyWindow(QtGui.QWidget):
         try:
             data = self.infoSocket.read(BUFFER_SIZE)
         except:
-            print('Slyapa')
+            print('Exeption durin CAS reading')
         
         if data:
             self.data_collect(data)  
@@ -338,7 +338,7 @@ class MyWindow(QtGui.QWidget):
 #------------------------------------------------------------------------------------------
 
                 
-    def print_data(self):
+    def beamhistory(self):
 
         i=0    			                     
         while self.ebep[i] < self.energy[-1]:
@@ -346,10 +346,7 @@ class MyWindow(QtGui.QWidget):
             
         M = i
         self.kbep = 1000*(self.ibep[M] - self.ibep[M-1])/(self.ebep[M] - self.ebep[M-1])
-        print(M)
-        print(self.kbep)
-
-        print(self.injection)
+# It isnt global, because VEPP Energy might be changed during running
             	
         if 	self.injection == 1:	
 
@@ -359,10 +356,7 @@ class MyWindow(QtGui.QWidget):
                 package = self.get_position()                       
                 self.x3 = package[1]
                 
-                self.kolebala = package[3]
-                self.delta = max(package[3][6000:8000]) - np.mean(package[3][0:28])
-                self.label.setText("dI_p "+repr(self.delta)+" I_p "+repr(self.ip))     
-                #self.curr = self.ip
+                self.delta = np.max(package[3][6000:8000]) - np.mean(package[3][0:28])
                 self.curr = np.mean(package[3][0:28])
                 
                 self.D = 670.
@@ -380,10 +374,7 @@ class MyWindow(QtGui.QWidget):
                 package = self.get_position()                       
                 self.x4 = package[1]
 
-                self.kolebala = package[3]
-                self.delta = max(package[3][6000:8000]) - np.mean(package[3][0:28])
-                self.label.setText("dI_e "+repr(self.delta)+"I_e "+repr(self.ie))
-                #self.curr = self.ie
+                self.delta = np.max(package[3][6000:8000]) - np.mean(package[3][0:28])
                 self.curr = np.mean(package[3][0:28])
                 
                 self.D = 720.
@@ -411,8 +402,7 @@ class MyWindow(QtGui.QWidget):
         self.d_list.append(self.delta)
         self.c_list.append(self.curr) 
 
-        y = rfft(self.x)
-        y = y/len(self.x)
+        y = rfft(self.x)/len(self.x)
         Q = np.linspace(0.,0.5, len(y))
 
         nu_cas = np.sqrt(14*0.036*(self.voltage[-1])/(2*np.pi*(self.energy[-1])*1000))
@@ -453,7 +443,7 @@ class MyWindow(QtGui.QWidget):
         naff_list = list()
 
         for a in nu:
-            naff_list.append(np.dot(self.x3, np.exp(2*np.pi*1j*n*a)))   
+            naff_list.append(np.dot(self.x, np.exp(2*np.pi*1j*n*a)))   
 
         y =  np.abs(np.sqrt(2.0)*np.array(naff_list)/len(self.x)) 
        
@@ -498,7 +488,6 @@ class MyWindow(QtGui.QWidget):
         stat.write('nu_pi phase ampl cos sin current delta'+'\n')
         for i in np.arange(len(self.nu_meas)):	
             stat.write('%f %f %f %f %f %f %f \n'%(self.nu_meas[i], self.phase[i], self.amplitude[i], self.cos[i], self.sin[i], self.c_list[i], self.d_list[i]))
-            i +=1
         stat.close()
             
             
