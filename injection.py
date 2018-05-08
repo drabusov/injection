@@ -24,8 +24,8 @@ SERVER_PORT = 10004
 
 BUFFER_SIZE = 128
 
-order = 'name:Timing|method:subscribe\n'
-order = order.encode()
+order_timing = 'name:Timing|method:subscribe\n'
+order_timing = order_timing.encode()
 
 order_voltage = 'name:VEPP/RF/U|method:subscribe\n'
 order_voltage = order_voltage.encode()
@@ -70,7 +70,7 @@ class MyWindow(QtGui.QWidget):
 
         self.vbox = QtGui.QVBoxLayout()
         
-        self.btnQuit = QtGui.QPushButton("Record all data")      
+        self.btnQuit = QtGui.QPushButton("Rec data")      
         self.connect(self.btnQuit, QtCore.SIGNAL("clicked()"), self.rec_stat)
 
         self.label = QtGui.QLabel('')
@@ -88,7 +88,7 @@ class MyWindow(QtGui.QWidget):
         self.plot_space1 = pg.PlotWidget()
         self.plot_space2 = pg.PlotWidget()
 
-        self.vbox.addWidget(self.label)        
+#        self.vbox.addWidget(self.label)        
         self.vbox.addWidget(self.label1)        
         self.vbox.addWidget(self.label2)        
         self.vbox.addWidget(self.plot_space1)
@@ -100,7 +100,6 @@ class MyWindow(QtGui.QWidget):
         self.tcpSocket.connectToHost(SERVER_HOST,SERVER_PORT)
 
         self.tcpSocket.readyRead.connect(self.readFortune)    
-
         self.connect(self.tcpSocket, QtCore.SIGNAL("connected()"), self.print_connected)
         self.connect(self.tcpSocket, QtCore.SIGNAL("disconnected()"), self.print_disconnected)
         self.tcpSocket.error.connect(self.print_error)
@@ -110,24 +109,22 @@ class MyWindow(QtGui.QWidget):
        
         
         self.connect(self, QtCore.SIGNAL("external()"), self.beamhistory)
-
         self.connect(self, QtCore.SIGNAL("history_recorded()"), self.fft_naff)
 
-        self.casSocket = QtNetwork.QTcpSocket(self)
-        
-        self.casSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
-        self.connect(self.casSocket, QtCore.SIGNAL("connected()"), self.print_connected_cas)
-        self.connect(self.casSocket, QtCore.SIGNAL("disconnected()"), self.print_disconnected_cas)
-        self.casSocket.error.connect(self.print_error_cas)
-        self.casSocket.readyRead.connect(self.catch)
+#        self.casSocket = QtNetwork.QTcpSocket(self) 
+#        self.casSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
+	
+#        self.connect(self.casSocket, QtCore.SIGNAL("connected()"), self.print_connected_cas)
+#        self.connect(self.casSocket, QtCore.SIGNAL("disconnected()"), self.print_disconnected_cas)
+#        self.casSocket.error.connect(self.print_error_cas)
+#        self.casSocket.readyRead.connect(self.catch)
            
-        self.casTimer = QtCore.QTimer()
-        self.casTimer.connect(self.casTimer, QtCore.SIGNAL('timeout()'), self.reconnect_cas)
 
 
-        self.infoSocket = QtNetwork.QTcpSocket(self)
-        
+
+        self.infoSocket = QtNetwork.QTcpSocket(self)        
         self.infoSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
+	
         self.connect(self.infoSocket, QtCore.SIGNAL("connected()"), self.print_connected_info)
         self.connect(self.infoSocket, QtCore.SIGNAL("disconnected()"), self.print_disconnected_cas)
         self.infoSocket.error.connect(self.print_error_cas)
@@ -163,16 +160,17 @@ class MyWindow(QtGui.QWidget):
             else:
                 print('Connection with HEMERA failed')    
         except:
-            print('exeption')  
+            print('exeption occured, hemera')  
 
 #----------------------------CAS-------------------------------------------------       			
                      
     def print_connected_cas(self):
         print('connection with CAS established')
-        self.casSocket.writeData(order)
+        self.casSocket.writeData(order_timing)
 
     def print_connected_info(self):
         print('connection with CAS established')
+        self.casSocket.writeData(order_timing)	
         self.infoSocket.writeData(order_regime)
         self.infoSocket.writeData(order_energy)
         self.infoSocket.writeData(order_voltage)
@@ -181,13 +179,13 @@ class MyWindow(QtGui.QWidget):
 
     def print_disconnected_cas(self):
         print('disconnected from CAS server')
-        self.casSocket.abort()
+#        self.casSocket.abort()
         self.infoSocket.abort()
         self.casTimer.start(1000)
                 
     def print_error_cas(self):
         print('Error occured with CAS server')
-        self.casSocket.abort()
+#        self.casSocket.abort()
         self.infoSocket.abort()
         print('CAS socket is closed')
         self.casTimer.start(1000)
@@ -195,7 +193,7 @@ class MyWindow(QtGui.QWidget):
     def reconnect_cas(self):
         print('Trying to solve the problem with CAS...')        
         try:
-            self.casSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
+#            self.casSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
             self.infoSocket.connectToHost(SERVER_HOST_CAS,SERVER_PORT_CAS)
             if self.casSocket.waitForConnected() == True:
                 print('Reconnected with CAS')
@@ -206,31 +204,30 @@ class MyWindow(QtGui.QWidget):
             print('exeption')             
 
 
-    def catch(self):
-        try:
-            data = self.casSocket.read(BUFFER_SIZE)
-        except:
-            print('Slyapa')
+#    def catch(self):
+#        try:
+#            data = self.casSocket.read(BUFFER_SIZE)
+#        except:
+#            print('Exeption occured ')
         
-        if data:
-            self.catch_sollution(data)  
-        else:
-            print('Nothing appeared')
+#        if data:
+#            self.catch_sollution(data)  
+#        else:
+#            print('Nothing appeared')
 
 
-    def catch_sollution(self, data1):
-        data1 = data1.decode()
-        data1 = data1.strip()
-        
-        data1 = data1.split('\n')
+#    def catch_sollution(self, data1):
+#        data1 = data1.decode()
+#        data1 = data1.strip()       
+#        data1 = data1.split('\n')
 
-        for elem in data1:
-            elem = elem.split('|')        
-            if elem[-1] == 'val:Wypusk':
-                print(elem)
-                self.injection = 1
-                self.regime = self.reg                
-                print(self.regime)            
+#        for elem in data1:
+#            elem = elem.split('|')        
+#            if elem[-1] == 'val:Wypusk':
+#                print(elem)
+#                self.injection = 1
+#                self.regime = self.reg                
+#                print(self.regime)            
 
 
 
@@ -252,8 +249,16 @@ class MyWindow(QtGui.QWidget):
             array = array.decode()
             array = array.strip()
             array = array.split('\n')
+                  		
             for elem in array:
-                elem = elem.split('|')        
+                elem = elem.split('|')
+		
+                if elem[-1] == 'val:Wypusk':
+                    print(elem)
+                    self.injection = 1
+                    self.regime = self.reg                
+                    print(self.regime)            
+0		
                 if elem[0] == 'name:VEPP/Energy/Energy_NMR':
                     E = elem[2]
                     E = E.split(':')
